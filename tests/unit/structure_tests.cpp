@@ -1,3 +1,4 @@
+#include "set_wrapper.hpp"
 #include "sorted_vector.hpp"
 
 #include <gtest/gtest.h>
@@ -14,7 +15,7 @@ namespace {
 
 template <typename Set> class StructureTest : public ::testing::Test {};
 
-using Structures = ::testing::Types<rank_queries::SortedVector<int>>;
+using Structures = ::testing::Types<rank_queries::SortedVector<int>, rank_queries::SetWrapper<int>>;
 TYPED_TEST_SUITE(StructureTest, Structures);
 
 struct CountCase {
