@@ -4,7 +4,7 @@ project(rank_queries LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(rank_queries_core STATIC source/query.cpp)
+add_library(rank_queries_core STATIC source/parser.cpp)
 target_include_directories(rank_queries_core PUBLIC "include")
 target_compile_options(rank_queries_core PRIVATE -Wall -Wextra -Wpedantic)
 
