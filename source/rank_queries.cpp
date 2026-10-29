@@ -1,3 +1,4 @@
+#include "avl_tree.hpp"
 #include "output.hpp"
 #include "parser.hpp"
 #include "runner.hpp"
@@ -23,9 +24,10 @@ struct Impl {
 constexpr Impl impls[] = {
     {"vector",  rank_queries::run<rank_queries::SortedVector<rank_queries::Key>>},
     {"set",     rank_queries::run<rank_queries::SetWrapper<rank_queries::Key>>},
+    {"avl",     rank_queries::run<rank_queries::AvlTree<rank_queries::Key>>},
 };
 
-constexpr std::string_view default_impl = "set";
+constexpr std::string_view default_impl = "avl";
 constexpr std::string_view impl_prefix = "--impl=";
 
 std::optional<RunFunc> select_run_func(int argc, char* argv[]) {
