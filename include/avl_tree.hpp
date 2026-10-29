@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <utility>
 
 namespace rank_queries {
@@ -25,6 +26,30 @@ public:
     ~AvlTree() { destroy(root_); }
 
     void insert(const KeyT& key) { root_ = insert_into(root_, key); }
+
+    std::size_t count_less(const KeyT& key) const {
+        return count_while([this, &key](const KeyT& node_key) { return comparator_(node_key, key); });
+    }
+
+    std::size_t count_less_equal(const KeyT& key) const {
+        return count_while([this, &key](const KeyT& node_key) { return !comparator_(key, node_key); });
+    }
+
+    std::optional<KeyT> kth_smallest(std::size_t i) const {
+        const Node* node = root_;
+        while (node) {
+            const std::size_t left_size = size(node->left_);
+            if (i <= left_size) {
+                node = node->left_;
+            } else if (i == left_size + 1) {
+                return node->key_;
+            } else {
+                i -= left_size + 1;
+                node = node->right_;
+            }
+        }
+        return std::nullopt;
+    }
 
 private:
     struct Node {
@@ -94,6 +119,20 @@ private:
             return node;
         }
         return balance(node);
+    }
+
+    template <typename Predicate> std::size_t count_while(Predicate is_before) const {
+        std::size_t count = 0;
+        const Node* node = root_;
+        while (node) {
+            if (is_before(node->key_)) {
+                count += size(node->left_) + 1;
+                node = node->right_;
+            } else {
+                node = node->left_;
+            }
+        }
+        return count;
     }
 
     static void destroy(Node* node) {
