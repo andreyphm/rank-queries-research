@@ -13,24 +13,22 @@
 
 namespace {
 
-using rank_queries::Key;
-
-using Run = std::vector<rank_queries::Answer> (*)(const std::vector<rank_queries::Query>&);
+using RunFunc = std::vector<rank_queries::Answer> (*)(const std::vector<rank_queries::Query>&);
 
 struct Impl {
     std::string_view name;
-    Run run;
+    RunFunc run_func;
 };
 
 constexpr Impl impls[] = {
-    {"vector",  rank_queries::run<rank_queries::SortedVector<Key>>},
-    {"set",     rank_queries::run<rank_queries::SetWrapper<Key>>},
+    {"vector",  rank_queries::run<rank_queries::SortedVector<rank_queries::Key>>},
+    {"set",     rank_queries::run<rank_queries::SetWrapper<rank_queries::Key>>},
 };
 
 constexpr std::string_view default_impl = "set";
 constexpr std::string_view impl_prefix = "--impl=";
 
-std::optional<Run> select_run(int argc, char* argv[]) {
+std::optional<RunFunc> select_run_func(int argc, char* argv[]) {
     if (argc > 2) {
         return std::nullopt;
     }
@@ -46,7 +44,7 @@ std::optional<Run> select_run(int argc, char* argv[]) {
 
     for (const auto& impl : impls) {
         if (impl.name == name) {
-            return impl.run;
+            return impl.run_func;
         }
     }
     return std::nullopt;
@@ -72,14 +70,14 @@ void print_usage(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
     std::ios::sync_with_stdio(false);
 
-    const auto run = select_run(argc, argv);
-    if (!run) {
+    const auto run_func = select_run_func(argc, argv);
+    if (!run_func) {
         print_usage(argc, argv);
         return 1;
     }
 
     const auto parsed = rank_queries::parse(std::cin, std::cerr);
-    const auto answers = (*run)(parsed.queries);
+    const auto answers = (*run_func)(parsed.queries);
     const auto output_error_count = rank_queries::output(answers, std::cout, std::cerr);
 
     return (parsed.error_count + output_error_count == 0) ? 0 : 1;
