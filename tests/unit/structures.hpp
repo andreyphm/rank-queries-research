@@ -1,8 +1,8 @@
 #pragma once
 
-#include "avl_tree.hpp"
-#include "set_wrapper.hpp"
-#include "sorted_vector.hpp"
+#include "structures/avl_tree.hpp"
+#include "structures/set_wrapper.hpp"
+#include "structures/sorted_vector.hpp"
 
 #include <gtest/gtest.h>
 
