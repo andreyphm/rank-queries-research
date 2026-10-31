@@ -13,6 +13,8 @@ function(add_e2e_tests group)
     endforeach()
 endfunction()
 
-foreach(group basic edge input)
+foreach(group basic edge input scale_mixed)
     add_e2e_tests(${group} vector set avl btree)
 endforeach()
+
+add_e2e_tests(scale_big avl btree)

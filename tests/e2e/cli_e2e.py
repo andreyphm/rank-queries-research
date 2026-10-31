@@ -1,12 +1,21 @@
 import argparse
+import bisect
+import random
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from common import Case, run_cases
 
 KEY_MIN: int = -(2**31)
 KEY_MAX: int = 2**31 - 1
+
+MIXED_KEY_COUNT: int = 100_000
+MIXED_QUERY_COUNT: int = 10_000
+MIXED_KEY_BOUND: int = 100_000
+
+BIG_KEY_COUNT: int = 2_000_000
+BIG_QUERY_COUNT: int = 1_000_000
 
 
 def out_of_range(*indices: int) -> str:
@@ -85,10 +94,93 @@ INPUT_CASES: tuple[Case, ...] = (
     ),
 )
 
-GROUPS: dict[str, Sequence[Case]] = {
-    "basic": BASIC_CASES,
-    "edge": EDGE_CASES,
-    "input": INPUT_CASES,
+
+def random_query(
+    generator: random.Random, keys: Sequence[int], low: int, high: int
+) -> tuple[str, int]:
+    kind = generator.choice("nqm")
+    if kind == "m" and keys:
+        index = generator.randint(1, len(keys))
+        return f"m {index}", keys[index - 1]
+    if kind == "q":
+        first = generator.randint(low, high)
+        second = generator.randint(low, high)
+        count = (
+            bisect.bisect_right(keys, second) - bisect.bisect_right(keys, first)
+            if first < second
+            else 0
+        )
+        return f"q {first} {second}", count
+    key = generator.randint(low, high)
+    return f"n {key}", bisect.bisect_left(keys, key)
+
+
+def encode_case(name: str, commands: Sequence[str], answers: Sequence[int]) -> Case:
+    return Case(
+        name,
+        "\n".join(commands) + "\n",
+        0,
+        " ".join(str(answer) for answer in answers) + "\n",
+    )
+
+
+def mixed_case(name: str, seed: int) -> Case:
+    generator = random.Random(seed)
+    is_insertion = [True] * MIXED_KEY_COUNT + [False] * MIXED_QUERY_COUNT
+    generator.shuffle(is_insertion)
+
+    keys: list[int] = []
+    commands: list[str] = []
+    answers: list[int] = []
+    for insertion in is_insertion:
+        if insertion:
+            key = generator.randint(-MIXED_KEY_BOUND, MIXED_KEY_BOUND)
+            position = bisect.bisect_left(keys, key)
+            if position == len(keys) or keys[position] != key:
+                keys.insert(position, key)
+            commands.append(f"k {key}")
+        else:
+            command, answer = random_query(
+                generator, keys, -MIXED_KEY_BOUND, MIXED_KEY_BOUND
+            )
+            commands.append(command)
+            answers.append(answer)
+    return encode_case(name, commands, answers)
+
+
+def big_case(
+    name: str, seed: int, inserted: Sequence[int], low: int, high: int
+) -> Case:
+    generator = random.Random(seed)
+    keys = sorted(set(inserted))
+    commands = [f"k {key}" for key in inserted]
+    answers: list[int] = []
+    for _ in range(BIG_QUERY_COUNT):
+        command, answer = random_query(generator, keys, low, high)
+        commands.append(command)
+        answers.append(answer)
+    return encode_case(name, commands, answers)
+
+
+def scale_mixed_cases() -> Sequence[Case]:
+    return (mixed_case("mixed insertions and queries", 1),)
+
+
+def scale_big_cases() -> Sequence[Case]:
+    generator = random.Random(2)
+    uniform = [generator.randint(KEY_MIN, KEY_MAX) for _ in range(BIG_KEY_COUNT)]
+    return (
+        big_case("uniform keys", 3, uniform, KEY_MIN, KEY_MAX),
+        big_case("ascending keys", 4, range(BIG_KEY_COUNT), -1, BIG_KEY_COUNT),
+    )
+
+
+GROUPS: dict[str, Callable[[], Sequence[Case]]] = {
+    "basic": lambda: BASIC_CASES,
+    "edge": lambda: EDGE_CASES,
+    "input": lambda: INPUT_CASES,
+    "scale_mixed": scale_mixed_cases,
+    "scale_big": scale_big_cases,
 }
 
 
@@ -99,7 +191,7 @@ def main() -> int:
     parser.add_argument("--group", choices=GROUPS, required=True)
     arguments = parser.parse_args()
     return run_cases(
-        arguments.binary, arguments.impl, arguments.group, GROUPS[arguments.group]
+        arguments.binary, arguments.impl, arguments.group, GROUPS[arguments.group]()
     )
 
 
