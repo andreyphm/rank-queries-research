@@ -2,6 +2,7 @@
 #include "parser.hpp"
 #include "runner.hpp"
 #include "structures/avl_tree.hpp"
+#include "structures/btree.hpp"
 #include "structures/set_wrapper.hpp"
 #include "structures/sorted_vector.hpp"
 
@@ -25,6 +26,7 @@ constexpr Impl impls[] = {
     {"vector",  rank_queries::run<rank_queries::SortedVector<rank_queries::Key>>},
     {"set",     rank_queries::run<rank_queries::SetWrapper<rank_queries::Key>>},
     {"avl",     rank_queries::run<rank_queries::AvlTree<rank_queries::Key>>},
+    {"btree",   rank_queries::run<rank_queries::BTree<rank_queries::Key>>},
 };
 
 constexpr std::string_view default_impl = "avl";
