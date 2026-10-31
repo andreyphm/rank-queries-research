@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <functional>
 #include <numeric>
+#include <optional>
 #include <utility>
 
 namespace rank_queries {
@@ -57,6 +58,33 @@ public:
         insert_key(node, keys_before(node, key), key);
     }
 
+    std::size_t count_less(const KeyT& key) const {
+        return count_while([this, &key](const KeyT& node_key) { return comparator_(node_key, key); });
+    }
+
+    std::size_t count_less_equal(const KeyT& key) const {
+        return count_while([this, &key](const KeyT& node_key) { return !comparator_(key, node_key); });
+    }
+
+    std::optional<KeyT> kth_smallest(std::size_t i) const {
+        const Node* node = root_;
+        while (node) {
+            std::size_t child_index = 0;
+            for (; child_index < node->key_count_; ++child_index) {
+                const std::size_t child_size = node->child_sizes_[child_index];
+                if (i <= child_size) {
+                    break;
+                }
+                if (i == child_size + 1) {
+                    return node->keys_[child_index];
+                }
+                i -= child_size + 1;
+            }
+            node = node->children_[child_index];
+        }
+        return std::nullopt;
+    }
+
 private:
     struct Node {
         std::size_t key_count_ = 0;
@@ -73,10 +101,25 @@ private:
         return std::accumulate(sizes, sizes + node->key_count_ + 1, node->key_count_);
     }
 
-    std::size_t keys_before(const Node* node, const KeyT& key) const {
+    template <typename Predicate> static std::size_t count_in_node_while(const Node* node, Predicate is_before) {
         const auto keys = node->keys_.begin();
-        const auto is_before = [this, &key](const KeyT& node_key) { return comparator_(node_key, key); };
         return std::partition_point(keys, keys + node->key_count_, is_before) - keys;
+    }
+
+    std::size_t keys_before(const Node* node, const KeyT& key) const {
+        return count_in_node_while(node, [this, &key](const KeyT& node_key) { return comparator_(node_key, key); });
+    }
+
+    template <typename Predicate> std::size_t count_while(Predicate is_before) const {
+        std::size_t count = 0;
+        const Node* node = root_;
+        while (node) {
+            const std::size_t keys = count_in_node_while(node, is_before);
+            const auto sizes = node->child_sizes_.begin();
+            count = std::accumulate(sizes, sizes + keys, count + keys);
+            node = node->children_[keys];
+        }
+        return count;
     }
 
     bool contains(const KeyT& key) const {
