@@ -59,13 +59,11 @@ constexpr Impl impls[] = {
     {"vector",   measure<rank_queries::SortedVector<Key>>},
     {"set",      measure<rank_queries::SetWrapper<Key>>},
     {"avl",      measure<rank_queries::AvlTree<Key>>},
-    {"btree2",   measure_btree<2>},
     {"btree8",   measure_btree<8>},
     {"btree16",  measure_btree<16>},
     {"btree32",  measure_btree<32>},
     {"btree64",  measure_btree<64>},
     {"btree128", measure_btree<128>},
-    {"btree256", measure_btree<256>},
 };
 
 constexpr std::string_view impl_prefix = "--impl=";

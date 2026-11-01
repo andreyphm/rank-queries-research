@@ -10,13 +10,11 @@ IMPLS: tuple[str, ...] = (
     "vector",
     "set",
     "avl",
-    "btree2",
     "btree8",
     "btree16",
     "btree32",
     "btree64",
     "btree128",
-    "btree256",
 )
 STREAM: str = "k 5 k 1 k 9 n 3 k 7 m 2 q 1 9\n"
 
