@@ -16,8 +16,11 @@ public:
         return static_cast<std::size_t>(std::distance(keys_.begin(), keys_.lower_bound(key)));
     }
 
-    std::size_t count_less_equal(const KeyT& key) const {
-        return static_cast<std::size_t>(std::distance(keys_.begin(), keys_.upper_bound(key)));
+    std::size_t count_in_range(const KeyT& low, const KeyT& high) const {
+        if (!keys_.key_comp()(low, high)) {
+            return 0;
+        }
+        return static_cast<std::size_t>(std::distance(keys_.upper_bound(low), keys_.upper_bound(high)));
     }
 
     std::optional<KeyT> kth_smallest(std::size_t i) const {

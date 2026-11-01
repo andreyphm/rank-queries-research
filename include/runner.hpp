@@ -23,11 +23,7 @@ template <typename Set> std::vector<Answer> run(const std::vector<Query>& querie
         }
 
         void operator()(const CountRange& query) {
-            if (query.low >= query.high) {
-                answers.push_back(CountAnswer{0});
-                return;
-            }
-            answers.push_back(CountAnswer{set.count_less_equal(query.high) - set.count_less_equal(query.low)});
+            answers.push_back(CountAnswer{set.count_in_range(query.low, query.high)});
         }
 
         void operator()(const KthSmallest& query) {

@@ -22,9 +22,11 @@ public:
         return static_cast<std::size_t>(pos - keys_.begin());
     }
 
-    std::size_t count_less_equal(const KeyT& key) const {
-        const auto pos = std::upper_bound(keys_.begin(), keys_.end(), key, comparator_);
-        return static_cast<std::size_t>(pos - keys_.begin());
+    std::size_t count_in_range(const KeyT& low, const KeyT& high) const {
+        if (!comparator_(low, high)) {
+            return 0;
+        }
+        return count_less_equal(high) - count_less_equal(low);
     }
 
     std::optional<KeyT> kth_smallest(std::size_t i) const {
@@ -35,6 +37,11 @@ public:
     }
 
 private:
+    std::size_t count_less_equal(const KeyT& key) const {
+        const auto pos = std::upper_bound(keys_.begin(), keys_.end(), key, comparator_);
+        return static_cast<std::size_t>(pos - keys_.begin());
+    }
+
     std::vector<KeyT> keys_;
     Comparator comparator_;
 };

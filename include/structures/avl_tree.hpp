@@ -31,8 +31,11 @@ public:
         return count_while([this, &key](const KeyT& node_key) { return comparator_(node_key, key); });
     }
 
-    std::size_t count_less_equal(const KeyT& key) const {
-        return count_while([this, &key](const KeyT& node_key) { return !comparator_(key, node_key); });
+    std::size_t count_in_range(const KeyT& low, const KeyT& high) const {
+        if (!comparator_(low, high)) {
+            return 0;
+        }
+        return count_less_equal(high) - count_less_equal(low);
     }
 
     std::optional<KeyT> kth_smallest(std::size_t i) const {
@@ -119,6 +122,10 @@ private:
             return node;
         }
         return balance(node);
+    }
+
+    std::size_t count_less_equal(const KeyT& key) const {
+        return count_while([this, &key](const KeyT& node_key) { return !comparator_(key, node_key); });
     }
 
     template <typename Predicate> std::size_t count_while(Predicate is_before) const {
