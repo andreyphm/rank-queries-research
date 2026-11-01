@@ -18,3 +18,9 @@ foreach(group basic edge input scale_mixed)
 endforeach()
 
 add_e2e_tests(scale_big avl btree)
+
+add_test(NAME e2e_gen
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_e2e.py
+        --binary $<TARGET_FILE:rank_queries_gen>
+        --solver $<TARGET_FILE:rank_queries>)
+set_tests_properties(e2e_gen PROPERTIES LABELS "e2e" TIMEOUT ${E2E_TIMEOUT_SECONDS})
