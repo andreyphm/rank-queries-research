@@ -12,11 +12,11 @@ add_executable(rank_queries source/rank_queries.cpp)
 target_link_libraries(rank_queries PRIVATE rank_queries_core)
 target_compile_options(rank_queries PRIVATE -Wall -Wextra -Wpedantic)
 
-add_executable(rank_queries_gen source/rank_queries_gen.cpp)
+add_executable(rank_queries_gen tools/rank_queries_gen.cpp)
 target_include_directories(rank_queries_gen PRIVATE "include")
 target_compile_options(rank_queries_gen PRIVATE -Wall -Wextra -Wpedantic)
 
-add_executable(rank_queries_bench source/rank_queries_bench.cpp)
+add_executable(rank_queries_bench bench/rank_queries_bench.cpp)
 target_link_libraries(rank_queries_bench PRIVATE rank_queries_core)
 target_compile_options(rank_queries_bench PRIVATE -Wall -Wextra -Wpedantic)
 
