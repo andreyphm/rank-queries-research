@@ -9,9 +9,9 @@
 
 namespace rank_queries {
 
-template <typename Set> std::vector<Answer> run(const std::vector<Query>& queries) {
+template <typename Set> std::vector<Answer> run(Set& target, const std::vector<Query>& queries) {
     struct Runner {
-        Set set;
+        Set& set;
         std::vector<Answer> answers;
 
         void operator()(const Insert& query) {
@@ -35,11 +35,16 @@ template <typename Set> std::vector<Answer> run(const std::vector<Query>& querie
         }
     };
 
-    Runner runner;
+    Runner runner{target, {}};
     for (const auto& query : queries) {
         std::visit(runner, query);
     }
     return std::move(runner.answers);
+}
+
+template <typename Set> std::vector<Answer> run(const std::vector<Query>& queries) {
+    Set set;
+    return run(set, queries);
 }
 
 } // namespace rank_queries
