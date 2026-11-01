@@ -24,3 +24,10 @@ add_test(NAME e2e_gen
         --binary $<TARGET_FILE:rank_queries_gen>
         --solver $<TARGET_FILE:rank_queries>)
 set_tests_properties(e2e_gen PROPERTIES LABELS "e2e" TIMEOUT ${E2E_TIMEOUT_SECONDS})
+
+add_test(NAME e2e_bench
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/bench_e2e.py
+        --binary $<TARGET_FILE:rank_queries_bench>
+        --solver $<TARGET_FILE:rank_queries>
+        --generator $<TARGET_FILE:rank_queries_gen>)
+set_tests_properties(e2e_bench PROPERTIES LABELS "e2e" TIMEOUT ${E2E_TIMEOUT_SECONDS})
