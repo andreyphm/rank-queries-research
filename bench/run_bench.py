@@ -1,5 +1,7 @@
 import argparse
 import csv
+import ctypes
+import os
 import subprocess
 import sys
 import tempfile
@@ -209,13 +211,21 @@ def generate_stream(generator: Path, stream: Stream, seed: int, path: Path) -> N
         )
 
 
+def pin_to_cpu(cpu: int) -> None:
+    if sys.platform == "win32":
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+        kernel32.SetProcessAffinityMask.argtypes = (ctypes.c_void_p, ctypes.c_size_t)
+        if not kernel32.SetProcessAffinityMask(kernel32.GetCurrentProcess(), 1 << cpu):
+            raise ctypes.WinError(ctypes.get_last_error())
+    else:
+        os.sched_setaffinity(0, {cpu})
+
+
 def measure(
-    binary: Path, impl: str, stream: Stream, path: Path, cpu: int, limit: float
+    binary: Path, impl: str, stream: Stream, path: Path, limit: float
 ) -> tuple[str, str, str]:
     command = [
-        "taskset",
-        "-c",
-        str(cpu),
         str(binary),
         f"--impl={impl}",
         f"--setup-count={stream.keys}",
@@ -290,7 +300,6 @@ def run_experiment(
                             impl,
                             stream,
                             stream_path,
-                            arguments.cpu,
                             arguments.limit,
                         )
                         writer.writerow(
@@ -338,6 +347,8 @@ def parse_arguments() -> argparse.Namespace:
 
 def main() -> int:
     arguments = parse_arguments()
+    if not arguments.dry_run:
+        pin_to_cpu(arguments.cpu)
     for name in arguments.experiments:
         if arguments.dry_run:
             print_plan(name, EXPERIMENTS[name]())
