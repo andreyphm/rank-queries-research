@@ -14,6 +14,7 @@ DEFAULT_CPU: int = 2
 
 SIZES: tuple[int, ...] = (10**3, 10**4, 10**5, 10**6, 10**7)
 LARGE_SIZES: tuple[int, ...] = (10**5, 10**6)
+BTREE_SIZES: tuple[int, ...] = (10**5, 10**6, 10**7)
 OPS_LIMIT: int = 10_000
 RANGE_PERCENT: float = 1.0
 
@@ -24,6 +25,7 @@ READ_ORDERS: tuple[str, ...] = ("ascending", "clustered")
 READ_QUERIES: tuple[str, ...] = ("n", "m", "q")
 INSERT_PERCENTS: tuple[int, ...] = (1, 10, 50, 90)
 MAX_KEYS_BY_IMPL: dict[str, int] = {"set": 10**5, "vector": 10**6}
+BUILD_MAX_KEYS_BY_IMPL: dict[str, int] = {"vector": 10**6}
 
 FIELDS: tuple[str, ...] = (
     "experiment",
@@ -72,18 +74,23 @@ def mix_stream(keys: int, insert_percent: int) -> Stream:
     return Stream(keys, ops_for(keys), insert_percent, "random", "mixed")
 
 
-def for_each_impl(impls: Sequence[str], streams: Sequence[Stream]) -> list[Point]:
+def for_each_impl(
+    impls: Sequence[str],
+    streams: Sequence[Stream],
+    max_keys_by_impl: dict[str, int] = MAX_KEYS_BY_IMPL,
+) -> list[Point]:
     return [
         Point(impl, stream)
         for stream in streams
         for impl in impls
-        if stream.keys <= MAX_KEYS_BY_IMPL.get(impl, SIZES[-1])
+        if stream.keys <= max_keys_by_impl.get(impl, SIZES[-1])
     ]
 
 
 def build_points() -> list[Point]:
     streams = [build_stream(keys, order) for keys in SIZES for order in ORDERS]
-    return for_each_impl(STRUCTURES, streams)
+    sorted_vector = [Point("vector", build_stream(SIZES[-1], "ascending"))]
+    return for_each_impl(STRUCTURES, streams, BUILD_MAX_KEYS_BY_IMPL) + sorted_vector
 
 
 def read_size_points() -> list[Point]:
@@ -92,7 +99,11 @@ def read_size_points() -> list[Point]:
         for keys in SIZES
         for queries in READ_QUERIES
     ]
-    return for_each_impl(STRUCTURES, streams)
+    sorted_vector = [
+        Point("vector", read_stream(SIZES[-1], "ascending", queries))
+        for queries in READ_QUERIES
+    ]
+    return for_each_impl(STRUCTURES, streams) + sorted_vector
 
 
 def read_order_points() -> list[Point]:
@@ -117,7 +128,7 @@ def mix_points() -> list[Point]:
 def btree_points() -> list[Point]:
     streams = [
         stream
-        for keys in LARGE_SIZES
+        for keys in BTREE_SIZES
         for stream in (
             build_stream(keys, "random"),
             read_stream(keys, "random", "mixed"),

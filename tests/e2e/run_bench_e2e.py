@@ -98,7 +98,7 @@ def check_resume_tells_build_from_read(script: Path, build_dir: Path) -> None:
         assert len(resumed) == 5 * 3, len(resumed)
 
 
-def check_size_limits_in_plan(script: Path, build_dir: Path) -> None:
+def largest_planned_sizes(script: Path, build_dir: Path, experiment: str) -> dict[str, int]:
     with tempfile.TemporaryDirectory() as directory:
         output_dir = Path(directory)
         completed = subprocess.run(
@@ -107,6 +107,8 @@ def check_size_limits_in_plan(script: Path, build_dir: Path) -> None:
                 str(script),
                 f"--build-dir={build_dir}",
                 f"--output-dir={output_dir}",
+                "--experiments",
+                experiment,
                 "--dry-run",
             ],
             capture_output=True,
@@ -115,15 +117,25 @@ def check_size_limits_in_plan(script: Path, build_dir: Path) -> None:
             check=True,
         )
         assert not list(output_dir.iterdir()), "dry run must not write results"
-    lines = completed.stdout.splitlines()
-    largest = {"set ": 100000, "vector ": 1000000, "avl ": 10000000}
-    for prefix, limit in largest.items():
-        plans = [line for line in lines if line.strip().startswith(prefix)]
-        assert plans, prefix
-        for line in plans:
-            keys = line.split("keys=[")[1].rstrip("]").split(", ")
-            assert max(int(key) for key in keys) <= limit, line
-        assert any(str(limit) in line for line in plans), prefix
+    largest: dict[str, int] = {}
+    for line in completed.stdout.splitlines()[1:]:
+        impl = line.split()[0]
+        keys = line.split("keys=[")[1].rstrip("]").split(", ")
+        largest[impl] = max(largest.get(impl, 0), *(int(key) for key in keys))
+    return largest
+
+
+def check_size_limits_in_plan(script: Path, build_dir: Path) -> None:
+    expected = {
+        "build": {"vector": 10**7, "set": 10**7, "avl": 10**7, "btree32": 10**7},
+        "read_size": {"vector": 10**7, "set": 10**5, "avl": 10**7, "btree32": 10**7},
+        "mix": {"vector": 10**6, "set": 10**5, "avl": 10**7, "btree32": 10**7},
+        "btree": {"btree8": 10**7, "btree128": 10**7},
+    }
+    for experiment, sizes in expected.items():
+        largest = largest_planned_sizes(script, build_dir, experiment)
+        for impl, limit in sizes.items():
+            assert largest.get(impl) == limit, f"{experiment} {impl}: {largest.get(impl)}"
 
 
 def main() -> int:
