@@ -26,7 +26,6 @@ STRUCTURE_COLORS: dict[str, str] = {
     "avl": "#1baf7a",
     "btree32": "#eda100",
 }
-STRUCTURE_MARKERS: dict[str, str] = {"vector": "o", "set": "s", "avl": "^", "btree32": "D"}
 SIZE_COLORS: dict[int, str] = {10**5: "#86b6ef", 10**6: "#2a78d6", 10**7: "#104281"}
 
 SIZES: tuple[int, ...] = (10**3, 10**4, 10**5, 10**6, 10**7)
@@ -124,7 +123,7 @@ def new_figure(
 
 
 def plot_series(
-    axes: Axes, xs: Sequence[float], medians_by_x: Sequence[float | None], label: str, color: str, marker: str
+    axes: Axes, xs: Sequence[float], medians_by_x: Sequence[float | None], label: str, color: str
 ) -> None:
     points = [(x, median) for x, median in zip(xs, medians_by_x) if median is not None]
     if not points:
@@ -134,7 +133,7 @@ def plot_series(
         [median for _, median in points],
         color=color,
         linewidth=2,
-        marker=marker,
+        marker="o",
         markersize=6,
         markeredgecolor=SURFACE,
         markeredgewidth=1,
@@ -186,9 +185,7 @@ def plot_by_size(
                 )
                 for keys in SIZES
             ]
-            plot_series(
-                panel_axes, SIZES, medians_by_x, impl, STRUCTURE_COLORS[impl], STRUCTURE_MARKERS[impl]
-            )
+            plot_series(panel_axes, SIZES, medians_by_x, impl, STRUCTURE_COLORS[impl])
     for unused in axes[len(panels) :]:
         unused.set_visible(False)
     finish(figure, axes, title, ylabel, path)
@@ -303,7 +300,7 @@ def plot_btree(results: Path, plots: Path) -> None:
                 )
                 for t in BTREE_TS
             ]
-            plot_series(panel_axes, BTREE_TS, medians_by_x, f"N = {power_of_ten(keys)}", color, "o")
+            plot_series(panel_axes, BTREE_TS, medians_by_x, f"N = {power_of_ten(keys)}", color)
     for panel_axes in axes:
         panel_axes.set_ylim(bottom=0)
     finish(figure, axes, "B-tree: choosing t", "ns", plots / "btree.png")
