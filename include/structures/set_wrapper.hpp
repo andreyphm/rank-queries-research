@@ -27,7 +27,11 @@ public:
         if (i == 0 || i > keys_.size()) {
             return std::nullopt;
         }
-        return *std::next(keys_.begin(), static_cast<std::ptrdiff_t>(i - 1));
+        auto it = keys_.begin();
+        for (std::size_t step = 1; step < i; ++step) {
+            ++it;
+        }
+        return *it;
     }
 
 private:
