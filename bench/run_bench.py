@@ -136,14 +136,18 @@ EXPERIMENTS: dict[str, Callable[[], list[Point]]] = {
 }
 
 
-def scenario_of(impl: str, stream: Stream) -> tuple[str, int, str, str]:
-    return (impl, stream.insert_percent, stream.order, stream.queries)
+Scenario = tuple[str, bool, int, str, str]
+
+
+def scenario_of(impl: str, stream: Stream) -> Scenario:
+    return (impl, stream.ops > 0, stream.insert_percent, stream.order, stream.queries)
 
 
 def row_key(impl: str, stream: Stream, seed: int) -> tuple[str, ...]:
     return (
         impl,
         str(stream.keys),
+        str(stream.ops),
         str(stream.insert_percent),
         stream.order,
         stream.queries,
@@ -153,9 +157,9 @@ def row_key(impl: str, stream: Stream, seed: int) -> tuple[str, ...]:
 
 def load_progress(
     path: Path,
-) -> tuple[set[tuple[str, ...]], dict[tuple[str, int, str, str], int]]:
+) -> tuple[set[tuple[str, ...]], dict[Scenario, int]]:
     done: set[tuple[str, ...]] = set()
-    blocked_from: dict[tuple[str, int, str, str], int] = {}
+    blocked_from: dict[Scenario, int] = {}
     if not path.exists():
         return done, blocked_from
     with open(path, newline="", encoding="utf-8") as file:
@@ -222,15 +226,15 @@ def measure(
 
 
 def print_plan(name: str, points: Sequence[Point]) -> None:
-    sizes: dict[tuple[str, int, str, str], list[int]] = {}
+    sizes: dict[Scenario, list[int]] = {}
     for point in points:
         scenario = scenario_of(point.impl, point.stream)
         sizes.setdefault(scenario, []).append(point.stream.keys)
     print(f"{name}: {len(points)} points")
-    for (impl, insert_percent, order, queries), keys in sizes.items():
+    for (impl, has_ops, insert_percent, order, queries), keys in sizes.items():
         print(
-            f"  {impl} insert={insert_percent} order={order} queries={queries} "
-            f"keys={sorted(keys)}"
+            f"  {impl} ops={has_ops} insert={insert_percent} order={order} "
+            f"queries={queries} keys={sorted(keys)}"
         )
 
 

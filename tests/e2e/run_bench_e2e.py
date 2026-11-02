@@ -77,6 +77,27 @@ def check_timeout_stops_larger_sizes(script: Path, build_dir: Path) -> None:
             assert row["setup_ns"] == "", row
 
 
+def check_resume_tells_build_from_read(script: Path, build_dir: Path) -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        output_dir = Path(directory)
+        arguments = ("--max-keys=100000", "--experiments", "btree", "--runs=1")
+        run_script(script, build_dir, output_dir, *arguments)
+        path = output_dir / "btree.csv"
+        rows = read_rows(path)
+        assert len(rows) == 5 * 3, len(rows)
+
+        kept = [row for row in rows if not (row["ops"] != "0" and row["insert_percent"] == "0")]
+        assert len(kept) == 5 * 2, len(kept)
+        with open(path, "w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(kept)
+
+        run_script(script, build_dir, output_dir, *arguments)
+        resumed = read_rows(path)
+        assert len(resumed) == 5 * 3, len(resumed)
+
+
 def check_size_limits_in_plan(script: Path, build_dir: Path) -> None:
     with tempfile.TemporaryDirectory() as directory:
         output_dir = Path(directory)
@@ -114,6 +135,7 @@ def main() -> int:
     checks = (
         check_rows_and_resume,
         check_timeout_stops_larger_sizes,
+        check_resume_tells_build_from_read,
         check_size_limits_in_plan,
     )
     failed = 0
