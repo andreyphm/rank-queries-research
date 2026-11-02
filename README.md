@@ -1,4 +1,4 @@
-<h1 align="center">Rank Queries Research</h1>
+<h1 align="center">Rank queries research</h1>
 
 <p align="center">
   Comparing four data structures on rank queries, from a thousand to 10 million keys
