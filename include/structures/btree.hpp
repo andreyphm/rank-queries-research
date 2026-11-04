@@ -236,14 +236,29 @@ private:
         return copy_root;
     }
 
-    static void destroy(Node* node) {
-        if (!node) {
+    static void destroy(Node* root) {
+        if (!root) {
             return;
         }
-        for (std::size_t i = 0; i <= node->key_count_; ++i) {
-            destroy(node->children_[i]);
+        struct Frame {
+            Node* node;
+            std::size_t next_child;
+        };
+        std::array<Frame, max_height> path;
+        std::size_t depth = 0;
+        path[depth++] = {root, 0};
+        while (depth > 0) {
+            Frame& frame = path[depth - 1];
+            if (is_leaf(frame.node) || frame.next_child > frame.node->key_count_) {
+                delete frame.node;
+                --depth;
+                continue;
+            }
+            Node* child = frame.node->children_[frame.next_child++];
+            if (child) {
+                path[depth++] = {child, 0};
+            }
         }
-        delete node;
     }
 
     Node* root_ = nullptr;
