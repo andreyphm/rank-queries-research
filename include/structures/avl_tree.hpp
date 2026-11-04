@@ -194,12 +194,18 @@ private:
     }
 
     static void destroy(Node* node) {
-        if (!node) {
-            return;
+        while (node) {
+            Node* left = node->left_;
+            if (left) {
+                node->left_ = left->right_;
+                left->right_ = node;
+                node = left;
+            } else {
+                Node* right = node->right_;
+                delete node;
+                node = right;
+            }
         }
-        destroy(node->left_);
-        destroy(node->right_);
-        delete node;
     }
 
     Node* root_ = nullptr;
