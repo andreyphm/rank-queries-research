@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <numeric>
 #include <optional>
 #include <utility>
@@ -16,8 +17,13 @@ template <typename KeyT, typename Comparator = std::less<KeyT>, std::size_t T = 
 public:
     BTree() = default;
 
-    BTree(const BTree&) = delete;
-    BTree& operator=(const BTree&) = delete;
+    BTree(const BTree& rhs) : comparator_(rhs.comparator_) { root_ = copy_tree(rhs.root_); }
+
+    BTree& operator=(const BTree& rhs) {
+        BTree copy(rhs);
+        *this = std::move(copy);
+        return *this;
+    }
 
     BTree(BTree&& rhs) : root_(rhs.root_), comparator_(std::move(rhs.comparator_)) { rhs.root_ = nullptr; }
 
@@ -176,6 +182,58 @@ private:
         insert_child(parent, child_index + 1, right);
         parent->child_sizes_[child_index] = subtree_size(left);
         insert_key(parent, child_index, left->keys_[T - 1]);
+    }
+
+    static constexpr std::size_t max_height = std::numeric_limits<std::size_t>::digits;
+
+    static void copy_contents(const Node* source, Node* copy) {
+        std::copy(source->keys_.begin(), source->keys_.begin() + source->key_count_, copy->keys_.begin());
+        std::copy(source->child_sizes_.begin(), source->child_sizes_.begin() + source->key_count_ + 1, copy->child_sizes_.begin());
+        copy->key_count_ = source->key_count_;
+    }
+
+    static Node* attach_child_copy(Node* parent_copy, std::size_t child_index, const Node* source_child) {
+        Node* child_copy = new Node;
+        parent_copy->children_[child_index] = child_copy;
+        copy_contents(source_child, child_copy);
+        return child_copy;
+    }
+
+    static void fill_copy(const Node* source_root, Node* copy_root) {
+        struct Frame {
+            const Node* source;
+            Node* copy;
+            std::size_t next_child;
+        };
+        copy_contents(source_root, copy_root);
+        std::array<Frame, max_height> path;
+        std::size_t depth = 0;
+        path[depth++] = {source_root, copy_root, 0};
+        while (depth > 0) {
+            Frame& frame = path[depth - 1];
+            if (is_leaf(frame.source) || frame.next_child > frame.source->key_count_) {
+                --depth;
+                continue;
+            }
+            const std::size_t child_index = frame.next_child++;
+            const Node* source_child = frame.source->children_[child_index];
+            Node* child_copy = attach_child_copy(frame.copy, child_index, source_child);
+            path[depth++] = {source_child, child_copy, 0};
+        }
+    }
+
+    static Node* copy_tree(const Node* source_root) {
+        if (!source_root) {
+            return nullptr;
+        }
+        Node* const copy_root = new Node;
+        try {
+            fill_copy(source_root, copy_root);
+        } catch (...) {
+            destroy(copy_root);
+            throw;
+        }
+        return copy_root;
     }
 
     static void destroy(Node* node) {

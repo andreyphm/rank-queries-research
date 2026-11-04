@@ -200,4 +200,89 @@ TYPED_TEST(StructureTest, MatchesBruteForceOnRandomOperations) {
     }
 }
 
+template <typename Set> class CopyTest : public ::testing::Test {};
+
+using CopyableStructures = ::testing::Types<rank_queries::SortedVector<int>, rank_queries::SetWrapper<int>,
+                                            rank_queries::BTree<int, std::less<int>, 2>>;
+
+TYPED_TEST_SUITE(CopyTest, CopyableStructures);
+
+template <typename Set> Set make_set(const std::vector<int>& keys) {
+    Set set;
+    for (const int key : keys) {
+        set.insert(key);
+    }
+    return set;
+}
+
+template <typename Set> void expect_keys(const Set& set, std::vector<int> keys) {
+    std::sort(keys.begin(), keys.end());
+    for (std::size_t i = 0; i < keys.size(); ++i) {
+        EXPECT_EQ(set.kth_smallest(i + 1), keys[i]) << "i " << i + 1;
+        EXPECT_EQ(set.count_less(keys[i]), i) << "key " << keys[i];
+    }
+    EXPECT_FALSE(set.kth_smallest(keys.size() + 1).has_value());
+}
+
+std::vector<int> shuffled_keys(int count) {
+    std::vector<int> keys(count);
+    for (int i = 0; i < count; ++i) {
+        keys[i] = 2 * i;
+    }
+    std::shuffle(keys.begin(), keys.end(), std::mt19937{7});
+    return keys;
+}
+
+TYPED_TEST(CopyTest, CopyOfEmptySetIsEmpty) {
+    const TypeParam empty;
+    const TypeParam copy(empty);
+
+    expect_keys(copy, {});
+}
+
+TYPED_TEST(CopyTest, CopyHasSameKeys) {
+    const std::vector<int> keys = shuffled_keys(200);
+    const auto original = make_set<TypeParam>(keys);
+    const TypeParam copy(original);
+
+    expect_keys(copy, keys);
+}
+
+TYPED_TEST(CopyTest, CopyIsIndependentOfOriginal) {
+    const std::vector<int> keys = shuffled_keys(200);
+    auto original = make_set<TypeParam>(keys);
+    TypeParam copy(original);
+
+    original.insert(-1);
+    copy.insert(1);
+
+    std::vector<int> original_keys = keys;
+    original_keys.push_back(-1);
+    std::vector<int> copy_keys = keys;
+    copy_keys.push_back(1);
+    expect_keys(original, original_keys);
+    expect_keys(copy, copy_keys);
+}
+
+TYPED_TEST(CopyTest, CopyAssignmentReplacesKeys) {
+    const std::vector<int> keys = shuffled_keys(200);
+    const auto source = make_set<TypeParam>(keys);
+    auto target = make_set<TypeParam>({-5, -3, -1});
+
+    target = source;
+
+    expect_keys(target, keys);
+    expect_keys(source, keys);
+}
+
+TYPED_TEST(CopyTest, SelfAssignmentKeepsKeys) {
+    const std::vector<int> keys = shuffled_keys(200);
+    auto set = make_set<TypeParam>(keys);
+    const TypeParam& same = set;
+
+    set = same;
+
+    expect_keys(set, keys);
+}
+
 } // namespace
