@@ -32,7 +32,28 @@ public:
 
     ~AvlTree() { destroy(root_); }
 
-    void insert(const KeyT& key) { root_ = insert_into(root_, key); }
+    void insert(const KeyT& key) {
+        std::array<Node**, max_height> path;
+        std::size_t depth = 0;
+        Node** link = &root_;
+        while (*link) {
+            Node* node = *link;
+            if (comparator_(key, node->key_)) {
+                path[depth++] = link;
+                link = &node->left_;
+            } else if (comparator_(node->key_, key)) {
+                path[depth++] = link;
+                link = &node->right_;
+            } else {
+                return;
+            }
+        }
+        *link = new Node(key);
+        while (depth > 0) {
+            Node** const parent_link = path[--depth];
+            *parent_link = balance(*parent_link);
+        }
+    }
 
     std::size_t count_less(const KeyT& key) const {
         return count_while([this, &key](const KeyT& node_key) { return comparator_(node_key, key); });
@@ -115,20 +136,6 @@ private:
             return rotate_left(node);
         }
         return node;
-    }
-
-    Node* insert_into(Node* node, const KeyT& key) {
-        if (!node) {
-            return new Node(key);
-        }
-        if (comparator_(key, node->key_)) {
-            node->left_ = insert_into(node->left_, key);
-        } else if (comparator_(node->key_, key)) {
-            node->right_ = insert_into(node->right_, key);
-        } else {
-            return node;
-        }
-        return balance(node);
     }
 
     std::size_t count_less_equal(const KeyT& key) const {
