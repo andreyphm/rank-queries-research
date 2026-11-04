@@ -1,8 +1,10 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <utility>
 
@@ -12,8 +14,13 @@ template <typename KeyT, typename Comparator = std::less<KeyT>> class AvlTree {
 public:
     AvlTree() = default;
 
-    AvlTree(const AvlTree&) = delete;
-    AvlTree& operator=(const AvlTree&) = delete;
+    AvlTree(const AvlTree& rhs) : comparator_(rhs.comparator_) { root_ = copy_tree(rhs.root_); }
+
+    AvlTree& operator=(const AvlTree& rhs) {
+        AvlTree copy(rhs);
+        *this = std::move(copy);
+        return *this;
+    }
 
     AvlTree(AvlTree&& rhs) : root_(rhs.root_), comparator_(std::move(rhs.comparator_)) { rhs.root_ = nullptr; }
 
@@ -140,6 +147,50 @@ private:
             }
         }
         return count;
+    }
+
+    static constexpr std::size_t max_height = std::numeric_limits<std::size_t>::digits * 3 / 2;
+
+    static Node* copy_node(const Node* source) {
+        Node* copy = new Node(source->key_);
+        copy->height_ = source->height_;
+        copy->size_ = source->size_;
+        return copy;
+    }
+
+    static void fill_copy(const Node* source_root, Node* copy_root) {
+        struct Pending {
+            const Node* source;
+            Node* copy;
+        };
+        std::array<Pending, max_height> pending;
+        std::size_t count = 0;
+        pending[count++] = {source_root, copy_root};
+        while (count > 0) {
+            const Pending current = pending[--count];
+            if (current.source->left_) {
+                current.copy->left_ = copy_node(current.source->left_);
+                pending[count++] = {current.source->left_, current.copy->left_};
+            }
+            if (current.source->right_) {
+                current.copy->right_ = copy_node(current.source->right_);
+                pending[count++] = {current.source->right_, current.copy->right_};
+            }
+        }
+    }
+
+    static Node* copy_tree(const Node* source_root) {
+        if (!source_root) {
+            return nullptr;
+        }
+        Node* const copy_root = copy_node(source_root);
+        try {
+            fill_copy(source_root, copy_root);
+        } catch (...) {
+            destroy(copy_root);
+            throw;
+        }
+        return copy_root;
     }
 
     static void destroy(Node* node) {

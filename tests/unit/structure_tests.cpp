@@ -202,10 +202,7 @@ TYPED_TEST(StructureTest, MatchesBruteForceOnRandomOperations) {
 
 template <typename Set> class CopyTest : public ::testing::Test {};
 
-using CopyableStructures = ::testing::Types<rank_queries::SortedVector<int>, rank_queries::SetWrapper<int>,
-                                            rank_queries::BTree<int, std::less<int>, 2>>;
-
-TYPED_TEST_SUITE(CopyTest, CopyableStructures);
+TYPED_TEST_SUITE(CopyTest, rank_queries::tests::Structures);
 
 template <typename Set> Set make_set(const std::vector<int>& keys) {
     Set set;
