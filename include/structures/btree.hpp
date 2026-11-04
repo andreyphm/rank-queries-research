@@ -36,9 +36,6 @@ public:
     ~BTree() { destroy(root_); }
 
     void insert(const KeyT& key) {
-        if (contains(key)) {
-            return;
-        }
         if (!root_) {
             root_ = new Node;
         }
@@ -49,6 +46,8 @@ public:
             split_child(new_root, 0);
         }
 
+        std::array<std::size_t*, max_height> path;
+        std::size_t depth = 0;
         Node* node = root_;
         while (!is_leaf(node)) {
             std::size_t i = keys_before(node, key);
@@ -58,10 +57,20 @@ public:
                     ++i;
                 }
             }
-            ++node->child_sizes_[i];
+            if (holds_at(node, i, key)) {
+                return;
+            }
+            path[depth++] = &node->child_sizes_[i];
             node = node->children_[i];
         }
-        insert_key(node, keys_before(node, key), key);
+        const std::size_t i = keys_before(node, key);
+        if (holds_at(node, i, key)) {
+            return;
+        }
+        insert_key(node, i, key);
+        for (std::size_t level = 0; level < depth; ++level) {
+            ++*path[level];
+        }
     }
 
     std::size_t count_less(const KeyT& key) const {
@@ -135,16 +144,8 @@ private:
         return count;
     }
 
-    bool contains(const KeyT& key) const {
-        const Node* node = root_;
-        while (node) {
-            const std::size_t i = keys_before(node, key);
-            if (i < node->key_count_ && !comparator_(key, node->keys_[i])) {
-                return true;
-            }
-            node = node->children_[i];
-        }
-        return false;
+    bool holds_at(const Node* node, std::size_t position, const KeyT& key) const {
+        return (position < node->key_count_) && !comparator_(key, node->keys_[position]);
     }
 
     template <typename Array> static void shift_right(Array& array, std::size_t from, std::size_t count) {
