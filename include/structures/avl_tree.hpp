@@ -15,7 +15,7 @@ public:
     AvlTree(const AvlTree&) = delete;
     AvlTree& operator=(const AvlTree&) = delete;
 
-    AvlTree(AvlTree&& rhs) : root_(rhs.root_), comparator_(rhs.comparator_) { rhs.root_ = nullptr; }
+    AvlTree(AvlTree&& rhs) : root_(rhs.root_), comparator_(std::move(rhs.comparator_)) { rhs.root_ = nullptr; }
 
     AvlTree& operator=(AvlTree&& rhs) {
         std::swap(root_, rhs.root_);

@@ -19,7 +19,7 @@ public:
     BTree(const BTree&) = delete;
     BTree& operator=(const BTree&) = delete;
 
-    BTree(BTree&& rhs) : root_(rhs.root_), comparator_(rhs.comparator_) { rhs.root_ = nullptr; }
+    BTree(BTree&& rhs) : root_(rhs.root_), comparator_(std::move(rhs.comparator_)) { rhs.root_ = nullptr; }
 
     BTree& operator=(BTree&& rhs) {
         std::swap(root_, rhs.root_);
