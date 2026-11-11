@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <format>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -15,19 +16,19 @@ using rank_queries::Key;
 
 struct Describe {
     std::string operator()(const rank_queries::Insert& query) const {
-        return "k " + std::to_string(query.key);
+        return std::format("k {}", query.key);
     }
 
     std::string operator()(const rank_queries::CountLess& query) const {
-        return "n " + std::to_string(query.key);
+        return std::format("n {}", query.key);
     }
 
     std::string operator()(const rank_queries::CountRange& query) const {
-        return "q " + std::to_string(query.low) + " " + std::to_string(query.high);
+        return std::format("q {} {}", query.low, query.high);
     }
 
     std::string operator()(const rank_queries::KthSmallest& query) const {
-        return "m " + std::to_string(query.index);
+        return std::format("m {}", query.index);
     }
 };
 
@@ -39,7 +40,7 @@ struct ParseCase {
 };
 
 void check(const ParseCase& test_case) {
-    SCOPED_TRACE("input '" + test_case.input + "'");
+    SCOPED_TRACE(std::format("input '{}'", test_case.input));
     std::istringstream input{test_case.input};
     std::ostringstream errors;
 
@@ -68,27 +69,27 @@ TEST(ParseTest, AnyWhitespaceSeparatesTokens) {
 }
 
 TEST(ParseTest, KeyBounds) {
-    const auto min = std::to_string(std::numeric_limits<Key>::min());
-    const auto max = std::to_string(std::numeric_limits<Key>::max());
+    constexpr Key min = std::numeric_limits<Key>::min();
+    constexpr Key max = std::numeric_limits<Key>::max();
 
-    check({"k " + min + " k " + max, {"k " + min, "k " + max}, "", 0});
-    check({"k " + max + "0", {}, "Error: Invalid query 'k " + max + "0'\n", 1});
-    check({"k " + min + "0", {}, "Error: Invalid query 'k " + min + "0'\n", 1});
+    check({std::format("k {} k {}", min, max), {std::format("k {}", min), std::format("k {}", max)}, "", 0});
+    check({std::format("k {}0", max), {}, std::format("Error: Invalid query 'k {}0'\n", max), 1});
+    check({std::format("k {}0", min), {}, std::format("Error: Invalid query 'k {}0'\n", min), 1});
 }
 
 TEST(ParseTest, IndexBounds) {
-    const auto max = std::to_string(std::numeric_limits<std::size_t>::max());
+    constexpr std::size_t max = std::numeric_limits<std::size_t>::max();
 
     check({"m 0", {"m 0"}, "", 0});
-    check({"m " + max, {"m " + max}, "", 0});
-    check({"m " + max + "0", {}, "Error: Invalid query 'm " + max + "0'\n", 1});
+    check({std::format("m {}", max), {std::format("m {}", max)}, "", 0});
+    check({std::format("m {}0", max), {}, std::format("Error: Invalid query 'm {}0'\n", max), 1});
     check({"m -1", {}, "Error: Invalid query 'm -1'\n", 1});
 }
 
 TEST(ParseTest, InvalidNumbers) {
     for (const char* token : {"abc", "12abc", "7.5", "+3", "-", "0x10", "1e3"}) {
-        const std::string query = std::string{"k "} + token;
-        check({query, {}, "Error: Invalid query '" + query + "'\n", 1});
+        const std::string query = std::format("k {}", token);
+        check({query, {}, std::format("Error: Invalid query '{}'\n", query), 1});
     }
 }
 

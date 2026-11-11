@@ -1,10 +1,12 @@
 #include "parser.hpp"
 
 #include <charconv>
+#include <format>
 #include <istream>
 #include <optional>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <system_error>
 
 namespace rank_queries {
@@ -35,7 +37,7 @@ template <typename Number> std::optional<Number> read_number(std::istream& input
 
 ParseResult parse(std::istream& input, std::ostream& errors) {
     ParseResult result;
-    const auto report = [&result, &errors](const std::string& message) {
+    const auto report = [&result, &errors](std::string_view message) {
         errors << "Error: " << message << '\n';
         ++result.error_count;
     };
@@ -43,7 +45,7 @@ ParseResult parse(std::istream& input, std::ostream& errors) {
     std::string command;
     while (input >> command) {
         if (command.size() != 1) {
-            report("Unknown command '" + command + "'");
+            report(std::format("Unknown command '{}'", command));
             continue;
         }
 
@@ -78,16 +80,16 @@ ParseResult parse(std::istream& input, std::ostream& errors) {
                 break;
 
             default:
-                report("Unknown command '" + command + "'");
+                report(std::format("Unknown command '{}'", command));
                 continue;
         }
 
         if (query) {
             result.queries.push_back(*query);
         } else if (input) {
-            report("Invalid query '" + text + "'");
+            report(std::format("Invalid query '{}'", text));
         } else {
-            report("Missing argument in '" + text + "'");
+            report(std::format("Missing argument in '{}'", text));
         }
     }
     return result;

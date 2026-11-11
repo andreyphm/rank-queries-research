@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <format>
 #include <limits>
 #include <string>
 #include <variant>
@@ -20,15 +21,15 @@ using rank_queries::Query;
 
 struct Describe {
     std::string operator()(const rank_queries::CountAnswer& answer) const {
-        return "count " + std::to_string(answer.value);
+        return std::format("count {}", answer.value);
     }
 
     std::string operator()(const rank_queries::KeyAnswer& answer) const {
-        return "key " + std::to_string(answer.value);
+        return std::format("key {}", answer.value);
     }
 
     std::string operator()(const rank_queries::OutOfRange& answer) const {
-        return "out of range " + std::to_string(answer.index);
+        return std::format("out of range {}", answer.index);
     }
 };
 
@@ -104,7 +105,7 @@ TYPED_TEST(RunnerTest, KthSmallestOutOfRange) {
         Insert{5}, Insert{7}, KthSmallest{0}, KthSmallest{2}, KthSmallest{3}, KthSmallest{max},
     };
     const std::vector<std::string> expected = {
-        "out of range 0", "key 7", "out of range 3", "out of range " + std::to_string(max),
+        "out of range 0", "key 7", "out of range 3", std::format("out of range {}", max),
     };
     EXPECT_EQ(run_and_describe<TypeParam>(queries), expected);
 }

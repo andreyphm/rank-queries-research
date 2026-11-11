@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <format>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -53,7 +54,7 @@ TEST(OutputTest, ExtremeValues) {
     constexpr std::size_t max_count = std::numeric_limits<std::size_t>::max();
 
     check({{KeyAnswer{min}, KeyAnswer{max}, CountAnswer{max_count}},
-           std::to_string(min) + " " + std::to_string(max) + " " + std::to_string(max_count) + "\n",
+           std::format("{} {} {}\n", min, max, max_count),
            "",
            0});
 }
