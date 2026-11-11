@@ -65,8 +65,8 @@ ParseResult parse(std::istream& input, std::ostream& errors) {
                 break;
 
             case 'q': {
-                const auto low = read_number<Key>(input, text);
-                const auto high = read_number<Key>(input, text);
+                const std::optional<Key> low = read_number<Key>(input, text);
+                const std::optional<Key> high = read_number<Key>(input, text);
                 if (low && high) {
                     query = CountRange{*low, *high};
                 }

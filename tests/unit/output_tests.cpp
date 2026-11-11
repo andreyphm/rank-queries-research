@@ -28,7 +28,7 @@ void check(const OutputCase& test_case) {
     std::ostringstream out;
     std::ostringstream errors;
 
-    const auto error_count = rank_queries::output(test_case.answers, out, errors);
+    const std::size_t error_count = rank_queries::output(test_case.answers, out, errors);
 
     EXPECT_EQ(out.str(), test_case.out);
     EXPECT_EQ(errors.str(), test_case.errors);

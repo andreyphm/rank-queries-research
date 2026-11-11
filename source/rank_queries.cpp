@@ -74,15 +74,15 @@ void print_usage(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
     std::ios::sync_with_stdio(false);
 
-    const auto run_func = select_run_func(argc, argv);
+    const std::optional<RunFunc> run_func = select_run_func(argc, argv);
     if (!run_func) {
         print_usage(argc, argv);
         return 1;
     }
 
-    const auto parsed = rank_queries::parse(std::cin, std::cerr);
-    const auto answers = (*run_func)(parsed.queries);
-    const auto output_error_count = rank_queries::output(answers, std::cout, std::cerr);
+    const rank_queries::ParseResult parsed = rank_queries::parse(std::cin, std::cerr);
+    const std::vector<rank_queries::Answer> answers = (*run_func)(parsed.queries);
+    const std::size_t output_error_count = rank_queries::output(answers, std::cout, std::cerr);
 
     return (parsed.error_count + output_error_count == 0) ? 0 : 1;
 }

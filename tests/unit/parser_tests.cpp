@@ -44,7 +44,7 @@ void check(const ParseCase& test_case) {
     std::istringstream input{test_case.input};
     std::ostringstream errors;
 
-    const auto result = rank_queries::parse(input, errors);
+    const rank_queries::ParseResult result = rank_queries::parse(input, errors);
 
     std::vector<std::string> str_queries;
     for (const auto& query : result.queries) {
