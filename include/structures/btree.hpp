@@ -41,7 +41,7 @@ public:
         }
         if (is_full(root_)) {
             Node* new_root = new Node;
-            new_root->children_[0] = root_;
+            new_root->children[0] = root_;
             root_ = new_root;
             split_child(new_root, 0);
         }
@@ -51,17 +51,17 @@ public:
         Node* node = root_;
         while (!is_leaf(node)) {
             std::size_t i = keys_before(node, key);
-            if (is_full(node->children_[i])) {
+            if (is_full(node->children[i])) {
                 split_child(node, i);
-                if (comparator_(node->keys_[i], key)) {
+                if (comparator_(node->keys[i], key)) {
                     ++i;
                 }
             }
             if (holds_at(node, i, key)) {
                 return;
             }
-            path[depth++] = &node->child_sizes_[i];
-            node = node->children_[i];
+            path[depth++] = &node->child_sizes[i];
+            node = node->children[i];
         }
         const std::size_t i = keys_before(node, key);
         if (holds_at(node, i, key)) {
@@ -88,40 +88,40 @@ public:
         const Node* node = root_;
         while (node) {
             std::size_t child_index = 0;
-            for (; child_index < node->key_count_; ++child_index) {
-                const std::size_t child_size = node->child_sizes_[child_index];
+            for (; child_index < node->key_count; ++child_index) {
+                const std::size_t child_size = node->child_sizes[child_index];
                 if (i <= child_size) {
                     break;
                 }
                 if (i == child_size + 1) {
-                    return node->keys_[child_index];
+                    return node->keys[child_index];
                 }
                 i -= child_size + 1;
             }
-            node = node->children_[child_index];
+            node = node->children[child_index];
         }
         return std::nullopt;
     }
 
 private:
     struct Node {
-        std::size_t key_count_ = 0;
-        std::array<KeyT, 2*T - 1> keys_;
-        std::array<Node*, 2*T> children_{};
-        std::array<std::size_t, 2*T> child_sizes_{};
+        std::size_t key_count = 0;
+        std::array<KeyT, 2*T - 1> keys;
+        std::array<Node*, 2*T> children{};
+        std::array<std::size_t, 2*T> child_sizes{};
     };
 
-    static bool is_full(const Node* node) { return (node->key_count_ == 2*T - 1); }
-    static bool is_leaf(const Node* node) { return !node->children_[0]; }
+    static bool is_full(const Node* node) { return (node->key_count == 2*T - 1); }
+    static bool is_leaf(const Node* node) { return !node->children[0]; }
 
     static std::size_t subtree_size(const Node* node) {
-        const auto sizes = node->child_sizes_.begin();
-        return std::accumulate(sizes, sizes + node->key_count_ + 1, node->key_count_);
+        const auto sizes = node->child_sizes.begin();
+        return std::accumulate(sizes, sizes + node->key_count + 1, node->key_count);
     }
 
     template <typename Predicate> static std::size_t count_in_node_while(const Node* node, Predicate is_before) {
-        const auto keys = node->keys_.begin();
-        return std::partition_point(keys, keys + node->key_count_, is_before) - keys;
+        const auto keys = node->keys.begin();
+        return std::partition_point(keys, keys + node->key_count, is_before) - keys;
     }
 
     std::size_t keys_before(const Node* node, const KeyT& key) const {
@@ -137,15 +137,15 @@ private:
         const Node* node = root_;
         while (node) {
             const std::size_t keys = count_in_node_while(node, is_before);
-            const auto sizes = node->child_sizes_.begin();
+            const auto sizes = node->child_sizes.begin();
             count = std::accumulate(sizes, sizes + keys, count + keys);
-            node = node->children_[keys];
+            node = node->children[keys];
         }
         return count;
     }
 
     bool holds_at(const Node* node, std::size_t position, const KeyT& key) const {
-        return (position < node->key_count_) && !comparator_(key, node->keys_[position]);
+        return (position < node->key_count) && !comparator_(key, node->keys[position]);
     }
 
     template <typename Array> static void shift_right(Array& array, std::size_t from, std::size_t count) {
@@ -154,48 +154,48 @@ private:
     }
 
     static void insert_key(Node* node, std::size_t position, const KeyT& key) {
-        shift_right(node->keys_, position, node->key_count_);
-        node->keys_[position] = key;
-        ++node->key_count_;
+        shift_right(node->keys, position, node->key_count);
+        node->keys[position] = key;
+        ++node->key_count;
     }
 
     static void insert_child(Node* parent, std::size_t position, Node* child) {
-        const std::size_t child_count = parent->key_count_ + 1;
-        shift_right(parent->children_, position, child_count);
-        shift_right(parent->child_sizes_, position, child_count);
-        parent->children_[position] = child;
-        parent->child_sizes_[position] = subtree_size(child);
+        const std::size_t child_count = parent->key_count + 1;
+        shift_right(parent->children, position, child_count);
+        shift_right(parent->child_sizes, position, child_count);
+        parent->children[position] = child;
+        parent->child_sizes[position] = subtree_size(child);
     }
 
     static Node* cut_right_half(Node* left) {
         Node* right = new Node;
-        std::copy(left->keys_.begin() + T, left->keys_.end(), right->keys_.begin());
-        std::copy(left->children_.begin() + T, left->children_.end(), right->children_.begin());
-        std::copy(left->child_sizes_.begin() + T, left->child_sizes_.end(), right->child_sizes_.begin());
-        left->key_count_ = T - 1;
-        right->key_count_ = T - 1;
+        std::copy(left->keys.begin() + T, left->keys.end(), right->keys.begin());
+        std::copy(left->children.begin() + T, left->children.end(), right->children.begin());
+        std::copy(left->child_sizes.begin() + T, left->child_sizes.end(), right->child_sizes.begin());
+        left->key_count = T - 1;
+        right->key_count = T - 1;
         return right;
     }
 
     static void split_child(Node* parent, std::size_t child_index) {
-        Node* left = parent->children_[child_index];
+        Node* left = parent->children[child_index];
         Node* right = cut_right_half(left);
         insert_child(parent, child_index + 1, right);
-        parent->child_sizes_[child_index] = subtree_size(left);
-        insert_key(parent, child_index, left->keys_[T - 1]);
+        parent->child_sizes[child_index] = subtree_size(left);
+        insert_key(parent, child_index, left->keys[T - 1]);
     }
 
     static constexpr std::size_t max_height = std::numeric_limits<std::size_t>::digits;
 
     static void copy_contents(const Node* source, Node* copy) {
-        std::copy(source->keys_.begin(), source->keys_.begin() + source->key_count_, copy->keys_.begin());
-        std::copy(source->child_sizes_.begin(), source->child_sizes_.begin() + source->key_count_ + 1, copy->child_sizes_.begin());
-        copy->key_count_ = source->key_count_;
+        std::copy(source->keys.begin(), source->keys.begin() + source->key_count, copy->keys.begin());
+        std::copy(source->child_sizes.begin(), source->child_sizes.begin() + source->key_count + 1, copy->child_sizes.begin());
+        copy->key_count = source->key_count;
     }
 
     static Node* attach_child_copy(Node* parent_copy, std::size_t child_index, const Node* source_child) {
         Node* child_copy = new Node;
-        parent_copy->children_[child_index] = child_copy;
+        parent_copy->children[child_index] = child_copy;
         copy_contents(source_child, child_copy);
         return child_copy;
     }
@@ -212,12 +212,12 @@ private:
         path[depth++] = {source_root, copy_root, 0};
         while (depth > 0) {
             Frame& frame = path[depth - 1];
-            if (is_leaf(frame.source) || frame.next_child > frame.source->key_count_) {
+            if (is_leaf(frame.source) || frame.next_child > frame.source->key_count) {
                 --depth;
                 continue;
             }
             const std::size_t child_index = frame.next_child++;
-            const Node* source_child = frame.source->children_[child_index];
+            const Node* source_child = frame.source->children[child_index];
             Node* child_copy = attach_child_copy(frame.copy, child_index, source_child);
             path[depth++] = {source_child, child_copy, 0};
         }
@@ -250,12 +250,12 @@ private:
         path[depth++] = {root, 0};
         while (depth > 0) {
             Frame& frame = path[depth - 1];
-            if (is_leaf(frame.node) || frame.next_child > frame.node->key_count_) {
+            if (is_leaf(frame.node) || frame.next_child > frame.node->key_count) {
                 delete frame.node;
                 --depth;
                 continue;
             }
-            Node* child = frame.node->children_[frame.next_child++];
+            Node* child = frame.node->children[frame.next_child++];
             if (child) {
                 path[depth++] = {child, 0};
             }

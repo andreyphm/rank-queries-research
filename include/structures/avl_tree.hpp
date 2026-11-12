@@ -38,12 +38,12 @@ public:
         Node** link = &root_;
         while (*link) {
             Node* node = *link;
-            if (comparator_(key, node->key_)) {
+            if (comparator_(key, node->key)) {
                 path[depth++] = link;
-                link = &node->left_;
-            } else if (comparator_(node->key_, key)) {
+                link = &node->left;
+            } else if (comparator_(node->key, key)) {
                 path[depth++] = link;
-                link = &node->right_;
+                link = &node->right;
             } else {
                 return;
             }
@@ -69,14 +69,14 @@ public:
     std::optional<KeyT> kth_smallest(std::size_t i) const {
         const Node* node = root_;
         while (node) {
-            const std::size_t left_size = size(node->left_);
+            const std::size_t left_size = size(node->left);
             if (i <= left_size) {
-                node = node->left_;
+                node = node->left;
             } else if (i == left_size + 1) {
-                return node->key_;
+                return node->key;
             } else {
                 i -= left_size + 1;
-                node = node->right_;
+                node = node->right;
             }
         }
         return std::nullopt;
@@ -84,37 +84,37 @@ public:
 
 private:
     struct Node {
-        KeyT key_;
-        Node* left_ = nullptr;
-        Node* right_ = nullptr;
-        int height_ = 1;
-        std::size_t size_ = 1;
+        KeyT key;
+        Node* left = nullptr;
+        Node* right = nullptr;
+        int height = 1;
+        std::size_t size = 1;
 
-        explicit Node(const KeyT& key) : key_(key) {}
+        explicit Node(const KeyT& key) : key(key) {}
     };
 
-    static int height(const Node* node) { return node ? node->height_ : 0; }
-    static int balance_factor(const Node* node) { return height(node->left_) - height(node->right_); }
-    static std::size_t size(const Node* node) { return node ? node->size_ : 0; }
+    static int height(const Node* node) { return node ? node->height : 0; }
+    static int balance_factor(const Node* node) { return height(node->left) - height(node->right); }
+    static std::size_t size(const Node* node) { return node ? node->size : 0; }
 
     static void update(Node* node) {
-        node->height_ = 1 + std::max(height(node->left_), height(node->right_));
-        node->size_ = 1 + size(node->left_) + size(node->right_);
+        node->height = 1 + std::max(height(node->left), height(node->right));
+        node->size = 1 + size(node->left) + size(node->right);
     }
 
     static Node* rotate_right(Node* y) {
-        Node* x = y->left_;
-        y->left_ = x->right_;
-        x->right_ = y;
+        Node* x = y->left;
+        y->left = x->right;
+        x->right = y;
         update(y);
         update(x);
         return x;
     }
 
     static Node* rotate_left(Node* x) {
-        Node* y = x->right_;
-        x->right_ = y->left_;
-        y->left_ = x;
+        Node* y = x->right;
+        x->right = y->left;
+        y->left = x;
         update(x);
         update(y);
         return y;
@@ -124,14 +124,14 @@ private:
         update(node);
         const int factor = balance_factor(node);
         if (factor > 1) {
-            if (balance_factor(node->left_) < 0) {
-                node->left_ = rotate_left(node->left_);
+            if (balance_factor(node->left) < 0) {
+                node->left = rotate_left(node->left);
             }
             return rotate_right(node);
         }
         if (factor < -1) {
-            if (balance_factor(node->right_) > 0) {
-                node->right_ = rotate_right(node->right_);
+            if (balance_factor(node->right) > 0) {
+                node->right = rotate_right(node->right);
             }
             return rotate_left(node);
         }
@@ -146,11 +146,11 @@ private:
         std::size_t count = 0;
         const Node* node = root_;
         while (node) {
-            if (is_before(node->key_)) {
-                count += size(node->left_) + 1;
-                node = node->right_;
+            if (is_before(node->key)) {
+                count += size(node->left) + 1;
+                node = node->right;
             } else {
-                node = node->left_;
+                node = node->left;
             }
         }
         return count;
@@ -159,9 +159,9 @@ private:
     static constexpr std::size_t max_height = std::numeric_limits<std::size_t>::digits * 3 / 2;
 
     static Node* copy_node(const Node* source) {
-        Node* copy = new Node(source->key_);
-        copy->height_ = source->height_;
-        copy->size_ = source->size_;
+        Node* copy = new Node(source->key);
+        copy->height = source->height;
+        copy->size = source->size;
         return copy;
     }
 
@@ -175,13 +175,13 @@ private:
         pending[count++] = {source_root, copy_root};
         while (count > 0) {
             const Pending current = pending[--count];
-            if (current.source->left_) {
-                current.copy->left_ = copy_node(current.source->left_);
-                pending[count++] = {current.source->left_, current.copy->left_};
+            if (current.source->left) {
+                current.copy->left = copy_node(current.source->left);
+                pending[count++] = {current.source->left, current.copy->left};
             }
-            if (current.source->right_) {
-                current.copy->right_ = copy_node(current.source->right_);
-                pending[count++] = {current.source->right_, current.copy->right_};
+            if (current.source->right) {
+                current.copy->right = copy_node(current.source->right);
+                pending[count++] = {current.source->right, current.copy->right};
             }
         }
     }
@@ -202,13 +202,13 @@ private:
 
     static void destroy(Node* node) {
         while (node) {
-            Node* left = node->left_;
+            Node* left = node->left;
             if (left) {
-                node->left_ = left->right_;
-                left->right_ = node;
+                node->left = left->right;
+                left->right = node;
                 node = left;
             } else {
-                Node* right = node->right_;
+                Node* right = node->right;
                 delete node;
                 node = right;
             }
