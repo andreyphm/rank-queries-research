@@ -32,17 +32,17 @@ struct Measurement {
 
 using MeasureFunc = Measurement (*)(const std::vector<Query>&, const std::vector<Query>&);
 
-template <typename Set> Measurement measure(const std::vector<Query>& setup, const std::vector<Query>& ops) {
+template <typename RankSet> Measurement measure(const std::vector<Query>& setup, const std::vector<Query>& ops) {
     using Clock = std::chrono::steady_clock;
     const auto to_ns = [](Clock::duration duration) {
         return static_cast<long long>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count());
     };
 
-    Set set;
+    RankSet rank_set;
     const auto start = Clock::now();
-    std::vector<rank_queries::Answer> setup_answers = rank_queries::run(set, setup);
+    std::vector<rank_queries::Answer> setup_answers = rank_queries::run(rank_set, setup);
     const auto setup_end = Clock::now();
-    std::vector<rank_queries::Answer> ops_answers = rank_queries::run(set, ops);
+    std::vector<rank_queries::Answer> ops_answers = rank_queries::run(rank_set, ops);
     const auto ops_end = Clock::now();
 
     return {to_ns(setup_end - start), to_ns(ops_end - setup_end), std::move(setup_answers), std::move(ops_answers)};

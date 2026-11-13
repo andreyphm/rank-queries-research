@@ -41,11 +41,11 @@ std::vector<std::string> describe(const std::vector<rank_queries::Answer>& answe
     return str_answers;
 }
 
-template <typename Set> std::vector<std::string> run_and_describe(const std::vector<Query>& queries) {
-    return describe(rank_queries::run<Set>(queries));
+template <typename RankSet> std::vector<std::string> run_and_describe(const std::vector<Query>& queries) {
+    return describe(rank_queries::run<RankSet>(queries));
 }
 
-template <typename Set> class RunnerTest : public ::testing::Test {};
+template <typename RankSet> class RunnerTest : public ::testing::Test {};
 
 TYPED_TEST_SUITE(RunnerTest, rank_queries::tests::Structures);
 
@@ -119,12 +119,12 @@ TYPED_TEST(RunnerTest, AnswersSeeOnlyEarlierInserts) {
 }
 
 TYPED_TEST(RunnerTest, SecondRunContinuesOnTheSameSet) {
-    TypeParam set;
-    EXPECT_TRUE(rank_queries::run(set, {Insert{5}, Insert{1}, Insert{9}}).empty());
+    TypeParam rank_set;
+    EXPECT_TRUE(rank_queries::run(rank_set, {Insert{5}, Insert{1}, Insert{9}}).empty());
 
     const std::vector<Query> queries = {CountLess{3}, Insert{7}, KthSmallest{3}};
     const std::vector<std::string> expected = {"count 1", "key 7"};
-    EXPECT_EQ(describe(rank_queries::run(set, queries)), expected);
+    EXPECT_EQ(describe(rank_queries::run(rank_set, queries)), expected);
 }
 
 } // namespace
