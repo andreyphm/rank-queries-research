@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <utility>
 
@@ -186,18 +187,19 @@ private:
         }
     }
 
+    struct TreeDeleter {
+        void operator()(Node* root) const { destroy(root); }
+    };
+
+    using TreeOwner = std::unique_ptr<Node, TreeDeleter>;
+
     static Node* copy_tree(const Node* source_root) {
         if (!source_root) {
             return nullptr;
         }
-        Node* const copy_root = copy_node(source_root);
-        try {
-            fill_copy(source_root, copy_root);
-        } catch (...) {
-            destroy(copy_root);
-            throw;
-        }
-        return copy_root;
+        TreeOwner copy_root{copy_node(source_root)};
+        fill_copy(source_root, copy_root.get());
+        return copy_root.release();
     }
 
     static void destroy(Node* node) {
