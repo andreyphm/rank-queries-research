@@ -187,7 +187,7 @@ python3 bench/plot.py --results-dir bench/results --plots-dir bench/plots
 ```
 
 > [!NOTE]
-> The results in [bench/results/](bench/results) were measured on a Release build under WSL. On Windows the runs are pinned to a core too, but the numbers may differ because the compiler and the memory allocator are different.
+> The [plots and conclusions](bench/README.md) use the [measurements](bench/results) from a Windows 11 Release build with GCC 16.2.0 (MSYS2 UCRT64). To repeat the full experiment, pass an empty output directory to the runner and use the same directory as the plotting script's `--results-dir`.
 
 ## Data structures
 
